@@ -36,15 +36,7 @@ if 'training_logs' not in st.session_state:
 if 'training_progress' not in st.session_state:
     st.session_state.training_progress = {}
 
-if 'huggingface_models' not in st.session_state:
-    st.session_state.huggingface_models = [
-        "codegen-350M-mono",
-        "codegen-2B-mono",
-        "Salesforce/codegen-350M-mono",
-        "Salesforce/codegen-2B-mono",
-        "gpt2",
-        "EleutherAI/gpt-neo-125M"
-    ]
+
 
 # Display getting started card
 st.subheader("Getting Started")

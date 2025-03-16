@@ -3,6 +3,17 @@ import json
 import os
 from utils import add_log
 
+# Initialize huggingface_models in session state if not present
+if 'huggingface_models' not in st.session_state:
+    st.session_state.huggingface_models = [
+        "codegen-350M-mono",
+        "codegen-2B-mono",
+        "Salesforce/codegen-350M-mono",
+        "Salesforce/codegen-2B-mono",
+        "gpt2",
+        "EleutherAI/gpt-neo-125M"
+    ]
+
 # Handle missing dependencies
 try:
     import torch
