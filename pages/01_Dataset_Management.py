@@ -1,10 +1,11 @@
 import time
 
-import pandas as pd
 import streamlit as st
-
 from data_utils import get_dataset_info, list_available_datasets, process_python_dataset
 from utils import add_log, display_sidebar, set_page_config
+
+# Import pandas after other imports to avoid circular dependency
+import pandas as pd
 
 # Set page configuration
 set_page_config()
