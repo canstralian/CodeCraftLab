@@ -1,7 +1,9 @@
-import streamlit as st
 import time
-from model_utils import list_trained_models, generate_code, get_model_info
-from utils import set_page_config, display_sidebar, add_log, format_code
+
+import streamlit as st
+
+from model_utils import generate_code, get_model_info, list_trained_models
+from utils import add_log, display_sidebar, format_code, set_page_config
 
 # Set page configuration
 set_page_config()

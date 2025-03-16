@@ -1,21 +1,23 @@
-import streamlit as st
-import pandas as pd
-import time
 import threading
-from data_utils import list_available_datasets, get_dataset_info
+import time
+
+import pandas as pd
+import streamlit as st
+
+from data_utils import get_dataset_info, list_available_datasets
 from model_utils import list_available_huggingface_models
 from training_utils import (
-    start_model_training,
-    stop_model_training,
     get_running_training_jobs,
     simulate_training,
+    start_model_training,
+    stop_model_training,
 )
 from utils import (
-    set_page_config,
-    display_sidebar,
     add_log,
     display_logs,
+    display_sidebar,
     plot_training_progress,
+    set_page_config,
 )
 
 # Set page configuration

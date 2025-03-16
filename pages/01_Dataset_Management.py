@@ -1,8 +1,10 @@
-import streamlit as st
-import pandas as pd
 import time
-from data_utils import process_python_dataset, list_available_datasets, get_dataset_info
-from utils import set_page_config, display_sidebar, add_log
+
+import pandas as pd
+import streamlit as st
+
+from data_utils import get_dataset_info, list_available_datasets, process_python_dataset
+from utils import add_log, display_sidebar, set_page_config
 
 # Set page configuration
 set_page_config()

@@ -1,7 +1,9 @@
 import unittest
 from unittest.mock import patch
+
 import streamlit as st
-from utils import set_page_config, display_sidebar
+
+from utils import display_sidebar, set_page_config
 
 
 class TestStreamlitApp(unittest.TestCase):
