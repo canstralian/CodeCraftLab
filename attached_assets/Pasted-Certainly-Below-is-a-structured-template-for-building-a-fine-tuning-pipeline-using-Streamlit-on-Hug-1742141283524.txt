@@ -1,0 +1,155 @@
+Certainly! Below is a structured template for building a fine-tuning pipeline using Streamlit on Hugging Face Spaces, tailored for a small, lightweight code generation model with your Python datasets.
+
+1. Setup & Environment
+   •   Create a Hugging Face Space: Navigate to Hugging Face Spaces and create a new Space, selecting Streamlit as the SDK.
+   •   Set up requirements.txt: In your Space repository, create a requirements.txt file to specify necessary dependencies:
+
+  streamlit
+  transformers
+  datasets
+  torch
+
+2. Data Preparation
+   •   Load and Preprocess Data: Utilize the datasets library to load and preprocess your Python code datasets. Tokenize the code and split the data into training and validation sets.
+
+  from datasets import load_dataset
+  from transformers import AutoTokenizer
+
+  # Load dataset
+  dataset = load_dataset('path_to_your_dataset')
+
+  # Initialize tokenizer
+  tokenizer = AutoTokenizer.from_pretrained('your_model_checkpoint')
+
+  # Tokenize function
+  def tokenize_function(examples):
+      return tokenizer(examples['code'], padding='max_length', truncation=True)
+
+  # Apply tokenization
+  tokenized_datasets = dataset.map(tokenize_function, batched=True)
+
+  # Split into train and validation
+  train_dataset = tokenized_datasets['train']
+  val_dataset = tokenized_datasets['validation']
+
+3. Model Selection & Fine-Tuning
+   •   Choose a Pre-trained Model: Select a lightweight model suitable for code generation, such as codegen-350M-mono.
+   •   Define Training Arguments: Set up training parameters like batch size, learning rate, and number of epochs.
+
+  from transformers import TrainingArguments
+
+  training_args = TrainingArguments(
+      output_dir='./results',
+      evaluation_strategy='epoch',
+      learning_rate=2e-5,
+      per_device_train_batch_size=8,
+      per_device_eval_batch_size=8,
+      num_train_epochs=3,
+      weight_decay=0.01,
+  )
+
+   •   Initialize Trainer: Use the Trainer API to handle the training loop.
+
+  from transformers import Trainer, TrainingArguments
+  from transformers import AutoModelForCausalLM
+
+  model = AutoModelForCausalLM.from_pretrained('codegen-350M-mono')
+
+  trainer = Trainer(
+      model=model,
+      args=training_args,
+      train_dataset=train_dataset,
+      eval_dataset=val_dataset,
+  )
+
+  trainer.train()
+
+4. Checkpoints & Model Saving
+   •   Save the Model: After training, save the model and tokenizer.
+
+  model.save_pretrained('./codegen_model')
+  tokenizer.save_pretrained('./codegen_model')
+
+   •   Push to Hugging Face Hub: Upload your model to the Hugging Face Model Hub for easy access and deployment.
+
+  transformers-cli login
+  transformers-cli upload ./codegen_model
+
+5. Streamlit UI for Fine-Tuning
+   •   Build the Streamlit Interface: Create an interactive web interface to control dataset selection, model selection, hyperparameter tuning, and training initiation.
+
+  import streamlit as st
+  from transformers import AutoTokenizer, AutoModelForCausalLM
+  from transformers import Trainer, TrainingArguments
+  from datasets import load_dataset
+
+  # Streamlit UI components
+  st.title('Code Generation Model Fine-Tuning')
+  dataset_name = st.selectbox('Select Dataset', ['Dataset1', 'Dataset2'])
+  model_name = st.selectbox('Select Model', ['codegen-350M-mono', 'codegen-2B-mono'])
+  epochs = st.slider('Epochs', 1, 5, 3)
+  learning_rate = st.slider('Learning Rate', 1e-5, 5e-5, 2e-5)
+  batch_size = st.slider('Batch Size', 4, 16, 8)
+  train_button = st.button('Start Training')
+
+  if train_button:
+      # Load dataset
+      dataset = load_dataset(dataset_name)
+
+      # Load tokenizer and model
+      tokenizer = AutoTokenizer.from_pretrained(model_name)
+      model = AutoModelForCausalLM.from_pretrained(model_name)
+
+      # Tokenize dataset
+      def tokenize_function(examples):
+          return tokenizer(examples['code'], padding='max_length', truncation=True)
+
+      tokenized_datasets = dataset.map(tokenize_function, batched=True)
+      train_dataset = tokenized_datasets['train']
+      val_dataset = tokenized_datasets['validation']
+
+      # Training arguments
+      training_args = TrainingArguments(
+          output_dir='./results',
+          evaluation_strategy='epoch',
+          learning_rate=learning_rate,
+          per_device_train_batch_size=batch_size,
+          per_device_eval_batch_size=batch_size,
+          num_train_epochs=epochs,
+          weight_decay=0.01,
+      )
+
+      # Initialize Trainer
+      trainer = Trainer(
+          model=model,
+          args=training_args,
+          train_dataset=train_dataset,
+          eval_dataset=val_dataset,
+      )
+
+      # Train the model
+      trainer.train()
+      st.success('Training Complete!')
+
+   •   Display Training Logs: Use Streamlit’s st.text_area() to show training logs dynamically.
+
+  import streamlit as st
+
+  # Assuming 'logs' is a list of training log strings
+  logs = ["Epoch 1: loss=0.5", "Epoch 2: loss=0.3", "Epoch 3: loss=0.2"]
+  st.text_area('Training Logs', '\n'.join(logs), height=300)
+
+6. Deployment on Hugging Face Spaces
+   •   Configure app.py: Ensure your app.py (Streamlit entry script) includes model loading and inference logic.
+
+  import streamlit as st
+  from transformers import AutoTokenizer, AutoModelForCausalLM
+
+  # Load model and tokenizer
+  model = AutoModelForCausalLM.from_pretrained('./codegen_model')
+  tokenizer = AutoTokenizer.from_pretrained('./codegen_model')
+
+  # Streamlit UI
+  st.title('Code Generation with Fine-Tuned Model')
+  user_input = st.text_input('Enter prompt:')
+  
