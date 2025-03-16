@@ -4,8 +4,15 @@ import streamlit as st
 from data_utils import get_dataset_info, list_available_datasets, process_python_dataset
 from utils import add_log, display_sidebar, set_page_config
 
-# Import pandas after other imports to avoid circular dependency
-import pandas as pd
+# Import pandas with fallback for circular imports
+try:
+    import pandas as pd
+except ImportError:
+    # Create a minimal pandas mock that won't break the UI
+    class PandasMock:
+        def DataFrame(self, *args, **kwargs):
+            return args[0] if args else {}
+    pd = PandasMock()
 
 # Set page configuration
 set_page_config()

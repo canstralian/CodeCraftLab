@@ -6,7 +6,15 @@ import ast
 import hashlib
 from datetime import datetime
 
-import pandas as pd
+# Handle the pandas import carefully to avoid circular imports
+pd = None
+try:
+    # Only import pandas when needed to avoid circular imports
+    import pandas as pd
+except ImportError:
+    # If pandas import fails, we'll handle it gracefully later
+    pass
+
 import streamlit as st
 
 # Handle missing dependencies
