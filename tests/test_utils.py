@@ -1,9 +1,6 @@
+
 import unittest
 from unittest.mock import patch
-
-import streamlit as st
-
-from utils import display_sidebar, set_page_config
 
 
 class TestStreamlitApp(unittest.TestCase):
@@ -27,7 +24,6 @@ class TestStreamlitApp(unittest.TestCase):
         mock_title,
     ):
         """Test app initialization and component display"""
-        import app  # Import here to trigger the app initialization
 
         mock_set_page_config.assert_called_once()
         mock_title.assert_called_once_with("CodeGen Hub")
@@ -37,7 +33,6 @@ class TestStreamlitApp(unittest.TestCase):
     @patch("streamlit.session_state", new_callable=dict)
     def test_session_state_initialization(self, mock_session_state):
         """Test session state variable initialization"""
-        import app  # Import here to initialize session state
 
         self.assertIn("datasets", mock_session_state)
         self.assertIn("trained_models", mock_session_state)
@@ -51,17 +46,25 @@ class TestStreamlitApp(unittest.TestCase):
 
     @patch("streamlit.metric")
     @patch("streamlit.session_state", new_callable=dict)
-    def test_platform_statistics_display(self, mock_session_state, mock_metric):
+    def test_platform_statistics_display(self, mock_session_state,
+                                         mock_metric):
         """Test platform statistics metrics display"""
-        mock_session_state["datasets"] = {"dataset1": "data1", "dataset2": "data2"}
+        mock_session_state["datasets"] = {
+            "dataset1": "data1",
+            "dataset2": "data2"
+        }
         mock_session_state["trained_models"] = {"model1": "trained_model1"}
         mock_session_state["training_progress"] = {
-            "job1": {"status": "running"},
-            "job2": {"status": "completed"},
-            "job3": {"status": "running"},
+            "job1": {
+                "status": "running"
+            },
+            "job2": {
+                "status": "completed"
+            },
+            "job3": {
+                "status": "running"
+            },
         }
-
-        import app  # Import here to trigger statistics display
 
         mock_metric.assert_any_call("Datasets Available", 2)
         mock_metric.assert_any_call("Trained Models", 1)
@@ -70,7 +73,6 @@ class TestStreamlitApp(unittest.TestCase):
     @patch("streamlit.info")
     def test_getting_started_section_display(self, mock_info):
         """Test 'Getting Started' section instructions display"""
-        import app  # Import here to trigger instructions display
 
         expected_messages = [
             "1. 📊 Start by uploading or selecting a Python code dataset in the **Dataset Management** section.",
