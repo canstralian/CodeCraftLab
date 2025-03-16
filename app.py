@@ -31,27 +31,23 @@ st.markdown("""
 # The sidebar will contain navigation options and other functionality.
 display_sidebar()
 
-# Create session state variables to store information across app pages.
-# These variables will persist data between user interactions.
-if 'datasets' not in st.session_state:
-    # Initialize the 'datasets' dictionary in the session state.
-    # This dictionary will store information about the uploaded datasets.
-    st.session_state.datasets = {}
+# Initialize session state variables
+initialize_session_state()
 
-if 'trained_models' not in st.session_state:
-    # Initialize the 'trained_models' dictionary in the session state.
-    # This dictionary will store information about the trained models.
-    st.session_state.trained_models = {}
+# Display platform statistics
+st.subheader("Platform Statistics")
+col1, col2, col3 = st.columns(3)
 
-if 'training_logs' not in st.session_state:
-    # Initialize the 'training_logs' list in the session state.
-    # This list will store the training logs for the models.
-    st.session_state.training_logs = []
+with col1:
+    datasets_count = len(st.session_state.get('datasets', {}))
+    st.metric("Datasets Available", datasets_count)
 
-if 'training_progress' not in st.session_state:
-    # Initialize the 'training_progress' dictionary in the session state.
-    # This dictionary will store the progress information for the training jobs.
-    st.session_state.training_progress = {}
+with col2:
+    models_count = len(st.session_state.get('trained_models', {}))
+    st.metric("Trained Models", models_count)
+
+with col3:
+    st.metric("Active Training Jobs", st.session_state.get('active_jobs_count', 0))
 
 # Display a "Getting Started" section with instructions for the user.
 st.subheader("Getting Started")

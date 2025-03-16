@@ -379,3 +379,20 @@ def simulate_training(model_id, dataset_name, base_model_name, epochs):
     training_thread.start()
     
     return stop_event
+def update_active_jobs_count():
+    """Update the count of active training jobs."""
+    active_count = sum(1 for progress in st.session_state.get('training_progress', {}).values() 
+                      if progress.get('status') == 'running')
+    st.session_state.active_jobs_count = active_count
+
+def start_model_training(*args, **kwargs):
+    """Start model training with job counter update."""
+    result = original_start_model_training(*args, **kwargs)
+    update_active_jobs_count()
+    return result
+
+def stop_model_training(*args, **kwargs):
+    """Stop model training with job counter update."""
+    result = original_stop_model_training(*args, **kwargs)
+    update_active_jobs_count()
+    return result

@@ -100,3 +100,17 @@ def create_folder_if_not_exists(folder_path):
         os.makedirs(folder_path)
         return True
     return False
+def initialize_session_state():
+    """Initialize all required session state variables with defaults."""
+    defaults = {
+        'datasets': {},
+        'trained_models': {},
+        'training_logs': [],
+        'training_progress': {},
+        'active_jobs_count': 0,
+        'stop_events': {}
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_value
