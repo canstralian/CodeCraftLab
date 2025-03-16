@@ -1,11 +1,11 @@
 import io
 import json
 import os
-
-import pandas as pd
 import streamlit as st
-
 from utils import add_log
+
+# Import pandas after other imports to avoid circular dependency
+import pandas as pd
 
 # Handle missing dependencies
 try:
