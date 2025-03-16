@@ -6,14 +6,14 @@ import ast
 import hashlib
 from datetime import datetime
 
-# Handle the pandas import carefully to avoid circular imports
+# Import pandas at function level to avoid circular imports
 pd = None
-try:
-    # Only import pandas when needed to avoid circular imports
-    import pandas as pd
-except ImportError:
-    # If pandas import fails, we'll handle it gracefully later
-    pass
+def get_pandas():
+    global pd
+    if pd is None:
+        import pandas as pd_
+        pd = pd_
+    return pd
 
 import streamlit as st
 
