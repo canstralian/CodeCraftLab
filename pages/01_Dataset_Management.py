@@ -204,16 +204,34 @@ with tab2:
                     preprocessing = dataset_info.get("preprocessing", {})
                     if preprocessing:
                         st.markdown("### Preprocessing Info")
+                        
+                        # Code quality metrics
                         if preprocessing.get("cleaned"):
                             st.markdown("✅ Code cleaning applied")
                         if preprocessing.get("deduplicated"):
                             st.markdown("✅ Duplicate removal applied")
+                            
+                        # Feature extraction
                         if preprocessing.get("has_docstrings"):
                             st.markdown("✅ Docstrings extracted")
                         if preprocessing.get("has_comments"):
                             st.markdown("✅ Comments extracted")
                         if preprocessing.get("has_complexity"):
                             st.markdown("✅ Complexity calculated")
+                        if preprocessing.get("has_function_class_names"):
+                            st.markdown("✅ Function/class names extracted")
+                        if preprocessing.get("has_import_analysis"):
+                            st.markdown("✅ Import statements analyzed")
+                        if preprocessing.get("has_code_statistics"):
+                            st.markdown("✅ Code statistics calculated")
+                            
+                        # Code style
+                        if preprocessing.get("has_style_analysis"):
+                            st.markdown("✅ Code style analyzed")
+                        if preprocessing.get("has_standardized_code"):
+                            st.markdown("✅ Code standardization applied")
+                        if preprocessing.get("uses_standardized_code"):
+                            st.markdown("✅ Using standardized code for processing")
 
                 with col2:
                     st.markdown("### Dataset Structure")
@@ -242,22 +260,89 @@ with tab2:
                             example = dataset["train"][i]
                             
                             # Check if we have additional extracted features
-                            has_extra = any(k in example for k in ["docstring", "comments", "complexity"])
+                            has_extra = any(k in example for k in ["docstring", "comments", "complexity", 
+                                                                  "function_names", "class_names", "imports", 
+                                                                  "statistics", "style_issues", "standardized_code"])
                             
                             if has_extra:
                                 st.markdown("### Additional Features")
                                 
-                                if "docstring" in example:
-                                    with st.expander("Docstring"):
-                                        st.markdown(f"```\n{example['docstring']}\n```")
+                                # Basic code features
+                                col1, col2 = st.columns(2)
                                 
-                                if "comments" in example:
-                                    with st.expander("Comments"):
-                                        for comment in example["comments"]:
-                                            st.markdown(f"- `{comment}`")
+                                with col1:
+                                    if "docstring" in example:
+                                        with st.expander("Docstring"):
+                                            st.markdown(f"```\n{example['docstring']}\n```")
+                                    
+                                    if "comments" in example:
+                                        with st.expander("Comments"):
+                                            for comment in example["comments"]:
+                                                st.markdown(f"- `{comment}`")
                                 
-                                if "complexity" in example:
-                                    st.metric("Cyclomatic Complexity", example["complexity"])
+                                with col2:
+                                    if "complexity" in example:
+                                        st.metric("Cyclomatic Complexity", example["complexity"])
+                                    
+                                    # Structure metrics
+                                    if "function_names" in example and example["function_names"]:
+                                        with st.expander("Functions"):
+                                            for func in example["function_names"]:
+                                                st.markdown(f"- `{func}`")
+                                    
+                                    if "class_names" in example and example["class_names"]:
+                                        with st.expander("Classes"):
+                                            for cls in example["class_names"]:
+                                                st.markdown(f"- `{cls}`")
+                                
+                                # Code analysis
+                                if "imports" in example:
+                                    with st.expander("Import Analysis"):
+                                        imports = example["imports"]
+                                        st.markdown(f"**Total imports:** {imports.get('total_count', 0)}")
+                                        
+                                        if imports.get("standard_lib"):
+                                            st.markdown("**Standard library imports:**")
+                                            for imp in imports.get("standard_lib", []):
+                                                st.markdown(f"- `{imp}`")
+                                        
+                                        if imports.get("third_party"):
+                                            st.markdown("**Third-party imports:**")
+                                            for imp in imports.get("third_party", []):
+                                                st.markdown(f"- `{imp}`")
+                                        
+                                        if imports.get("local"):
+                                            st.markdown("**Local imports:**")
+                                            for imp in imports.get("local", []):
+                                                st.markdown(f"- `{imp}`")
+                                
+                                # Code statistics
+                                if "statistics" in example:
+                                    with st.expander("Code Statistics"):
+                                        stats = example["statistics"]
+                                        col1, col2, col3 = st.columns(3)
+                                        with col1:
+                                            st.metric("Lines", stats.get("total_lines", 0))
+                                        with col2:
+                                            st.metric("Tokens", stats.get("total_tokens", 0))
+                                        with col3:
+                                            st.metric("AST Nodes", stats.get("ast_nodes", 0))
+                                
+                                # Code style
+                                if "style_issues" in example:
+                                    with st.expander("Style Analysis"):
+                                        style = example["style_issues"]
+                                        st.markdown(f"**PEP 8 compliance score:** {style.get('pep8_score', 0)}/10")
+                                        
+                                        if style.get("issues"):
+                                            st.markdown("**Style issues:**")
+                                            for issue in style.get("issues", []):
+                                                st.markdown(f"- {issue}")
+                                
+                                # Standardized code
+                                if "standardized_code" in example:
+                                    with st.expander("Standardized Code"):
+                                        st.code(example["standardized_code"], language="python")
                 else:
                     st.info("No examples available to display")
 
