@@ -101,16 +101,38 @@ def create_folder_if_not_exists(folder_path):
         return True
     return False
 def initialize_session_state():
-    """Initialize all required session state variables with defaults."""
-    defaults = {
-        'datasets': {},
-        'trained_models': {},
-        'training_logs': [],
-        'training_progress': {},
-        'active_jobs_count': 0,
-        'stop_events': {}
-    }
+    """
+    Initialize all required session state variables with defaults.
     
-    for key, default_value in defaults.items():
-        if key not in st.session_state:
-            st.session_state[key] = default_value
+    This function ensures all necessary state variables exist in the Streamlit
+    session state. If a variable doesn't exist, it is created with a default value.
+    
+    Variables initialized:
+    - datasets: Dictionary of uploaded datasets
+    - trained_models: Dictionary of trained models
+    - training_logs: List of training operation logs
+    - training_progress: Dictionary tracking training job progress
+    - active_jobs_count: Counter for currently running training jobs
+    - stop_events: Dictionary of events to stop training jobs
+    
+    Raises:
+        Exception: If session state initialization fails
+    """
+    try:
+        defaults = {
+            'datasets': {},
+            'trained_models': {},
+            'training_logs': [],
+            'training_progress': {},
+            'active_jobs_count': 0,
+            'stop_events': {},
+            'last_error': None
+        }
+        
+        for key, default_value in defaults.items():
+            if key not in st.session_state:
+                st.session_state[key] = default_value
+                add_log(f"Initialized {key} in session state")
+    except Exception as e:
+        add_log(f"Session state initialization failed: {str(e)}")
+        raise Exception(f"Failed to initialize session state: {str(e)}")
