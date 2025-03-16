@@ -1,7 +1,8 @@
+import os
 
 import streamlit as st
-from utils import set_page_config, display_sidebar, initialize_session_state, add_log
-import os
+
+from utils import add_log, display_sidebar, initialize_session_state, set_page_config
 
 try:
     # Set the page configuration for the Streamlit app
@@ -10,7 +11,8 @@ try:
     # Display the main title of the Streamlit app
     st.title("CodeGen Hub")
 
-    st.markdown("""
+    st.markdown(
+        """
         Welcome to CodeGen Hub - A platform for training and using code generation models with Hugging Face integration.
 
         ### Core Features:
@@ -21,7 +23,8 @@ try:
         - Seamless integration with Hugging Face Hub for model management
 
         Navigate through the different sections using the sidebar menu.
-    """)
+    """
+    )
 
     # Display the sidebar
     display_sidebar()
@@ -40,15 +43,15 @@ try:
 
         with st.spinner("Loading statistics..."):
             with col1:
-                datasets_count = len(st.session_state.get('datasets', {}))
+                datasets_count = len(st.session_state.get("datasets", {}))
                 st.metric("Datasets Available", datasets_count)
 
             with col2:
-                models_count = len(st.session_state.get('trained_models', {}))
+                models_count = len(st.session_state.get("trained_models", {}))
                 st.metric("Trained Models", models_count)
 
             with col3:
-                active_jobs = st.session_state.get('active_jobs_count', 0)
+                active_jobs = st.session_state.get("active_jobs_count", 0)
                 st.metric("Active Training Jobs", active_jobs)
 
     except Exception as e:
@@ -60,16 +63,20 @@ try:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.info("""
+        st.info(
+            """
             1. 📊 Start by uploading or selecting a Python code dataset in the **Dataset Management** section.
             2. 🛠️ Configure and train your model in the **Model Training** section.
-        """)
+        """
+        )
 
     with col2:
-        st.info("""
+        st.info(
+            """
             3. 💡 Generate code predictions using your trained models in the **Code Generation** section.
             4. 🔄 Access your models on Hugging Face Hub for broader use.
-        """)
+        """
+        )
 
 except Exception as e:
     st.error("An unexpected error occurred. Please try refreshing the page.")
