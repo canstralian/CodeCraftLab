@@ -6,15 +6,8 @@ import ast
 import hashlib
 from datetime import datetime
 
-# First import utilities that don't depend on pandas
-from utils import add_log, format_code
-
-# Then import pandas and streamlit
+import pandas as pd
 import streamlit as st
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
 
 # Handle missing dependencies
 try:
@@ -43,6 +36,8 @@ except ImportError:
     class DatasetDict(dict):
         pass
 
+# Import utils after other imports to avoid circular dependency
+from utils import add_log, format_code
 
 def process_python_dataset(uploaded_file, dataset_name, preprocessing_options=None):
     """
