@@ -11,7 +11,14 @@ pd = None
 def get_pandas():
     global pd
     if pd is None:
+        # Import pandas lazily to avoid circular imports
+pd = None
+def get_pandas():
+    global pd
+    if pd is None:
         import pandas as pd_
+        pd = pd_
+    return pd_
         pd = pd_
     return pd
 

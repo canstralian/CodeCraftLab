@@ -8,7 +8,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "streamlit run app.py --server.port 5000"]
 
 [workflows]
-runButton = "Streamlit Main"
+runButton = "Streamlit App"
 
 [[workflows.workflow]]
 name = "Project"
@@ -41,7 +41,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run app.py --server.address 0.0.0.0 --server.port 5000 --server.headless true"
+args = "streamlit run app.py --server.address 0.0.0.0 --server.port 8080 --server.headless true"
 
 [[workflows.workflow]]
 name = "Streamlit Main"
