@@ -75,7 +75,7 @@ with tab1:
                     st.success(f"Dataset '{dataset_name}' processed successfully!")
                     add_log(f"Dataset '{dataset_name}' uploaded and processed")
                     time.sleep(1)
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Failed to process dataset. Check logs for details.")
 
