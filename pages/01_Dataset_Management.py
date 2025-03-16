@@ -58,6 +58,45 @@ with tab1:
             step=0.05,
             disabled=not auto_split,
         )
+        
+    # Preprocessing settings section with expandable container
+    with st.expander("Advanced Preprocessing Options", expanded=False):
+        st.markdown("### Code Quality")
+        col1, col2 = st.columns(2)
+        with col1:
+            clean_code_option = st.checkbox("Clean and normalize code", value=True, 
+                                help="Remove excessive whitespace and normalize line endings")
+            deduplicate = st.checkbox("Remove duplicate code samples", value=False,
+                                help="Detect and remove duplicate code snippets")
+            
+        with col2:
+            min_length = st.number_input("Minimum code length (chars)", min_value=0, value=10,
+                                help="Filter out code samples below this length")
+            max_length = st.number_input("Maximum code length (chars)", min_value=0, value=10000,
+                                help="Filter out code samples above this length (0 for no limit)")
+    
+        st.markdown("### Feature Extraction")
+        col1, col2 = st.columns(2)
+        with col1:
+            extract_docstrings = st.checkbox("Extract docstrings", value=False,
+                                    help="Extract docstrings from Python code")
+            extract_comments = st.checkbox("Extract comments", value=False,
+                                help="Extract comments from Python code")
+            
+        with col2:
+            calculate_complexity = st.checkbox("Calculate code complexity", value=False,
+                                    help="Compute cyclomatic complexity for each code sample")
+            filter_by_complexity = st.checkbox("Filter by complexity", value=False,
+                                    help="Filter code samples based on complexity")
+            
+        if filter_by_complexity:
+            col1, col2 = st.columns(2)
+            with col1:
+                min_complexity = st.number_input("Minimum complexity", min_value=1, value=1,
+                                        help="Filter out code below this complexity")
+            with col2:
+                max_complexity = st.number_input("Maximum complexity", min_value=1, value=20,
+                                        help="Filter out code above this complexity")
 
     # Process button
     if st.button("Process Dataset"):
@@ -70,11 +109,34 @@ with tab1:
                 f"Dataset with name '{dataset_name}' already exists. Please choose a different name."
             )
         else:
+            # Collect preprocessing options
+            preprocessing_options = {
+                # Dataset splitting
+                "validation_split": split_ratio if auto_split else 0.2,
+                
+                # Code quality options
+                "clean_code": clean_code_option,
+                "deduplicate": deduplicate,
+                "min_length": min_length,
+                "max_length": max_length if max_length > 0 else float('inf'),
+                
+                # Feature extraction
+                "extract_docstring": extract_docstrings,
+                "extract_comments": extract_comments,
+                "calculate_complexity": calculate_complexity,
+                
+                # Complexity filtering
+                "filter_by_complexity": filter_by_complexity,
+                "min_complexity": min_complexity if filter_by_complexity else 1,
+                "max_complexity": max_complexity if filter_by_complexity else float('inf')
+            }
+            
             with st.spinner("Processing dataset..."):
-                success = process_python_dataset(uploaded_file, dataset_name)
+                add_log(f"Processing dataset with options: {preprocessing_options}")
+                success = process_python_dataset(uploaded_file, dataset_name, preprocessing_options)
                 if success:
                     st.success(f"Dataset '{dataset_name}' processed successfully!")
-                    add_log(f"Dataset '{dataset_name}' uploaded and processed")
+                    add_log(f"Dataset '{dataset_name}' uploaded and processed with preprocessing")
                     time.sleep(1)
                     st.rerun()
                 else:
@@ -109,6 +171,21 @@ with tab2:
                         f"**Validation Examples:** {dataset_info['validation_size']}"
                     )
                     st.markdown(f"**Created:** {dataset_info['created_at']}")
+                    
+                    # Display preprocessing metadata if available
+                    preprocessing = dataset_info.get("preprocessing", {})
+                    if preprocessing:
+                        st.markdown("### Preprocessing Info")
+                        if preprocessing.get("cleaned"):
+                            st.markdown("✅ Code cleaning applied")
+                        if preprocessing.get("deduplicated"):
+                            st.markdown("✅ Duplicate removal applied")
+                        if preprocessing.get("has_docstrings"):
+                            st.markdown("✅ Docstrings extracted")
+                        if preprocessing.get("has_comments"):
+                            st.markdown("✅ Comments extracted")
+                        if preprocessing.get("has_complexity"):
+                            st.markdown("✅ Complexity calculated")
 
                 with col2:
                     st.markdown("### Dataset Structure")
@@ -127,10 +204,32 @@ with tab2:
                     sample_size = min(5, len(dataset["train"]))
                     for i in range(sample_size):
                         with st.expander(f"Example {i+1}"):
+                            # Display code
                             st.code(
                                 dataset["train"][i].get("code", "# No code available"),
                                 language="python",
                             )
+                            
+                            # Display additional features in columns if they exist
+                            example = dataset["train"][i]
+                            
+                            # Check if we have additional extracted features
+                            has_extra = any(k in example for k in ["docstring", "comments", "complexity"])
+                            
+                            if has_extra:
+                                st.markdown("### Additional Features")
+                                
+                                if "docstring" in example:
+                                    with st.expander("Docstring"):
+                                        st.markdown(f"```\n{example['docstring']}\n```")
+                                
+                                if "comments" in example:
+                                    with st.expander("Comments"):
+                                        for comment in example["comments"]:
+                                            st.markdown(f"- `{comment}`")
+                                
+                                if "complexity" in example:
+                                    st.metric("Cyclomatic Complexity", example["complexity"])
                 else:
                     st.info("No examples available to display")
 

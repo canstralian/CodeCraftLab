@@ -1,9 +1,12 @@
 import io
 import json
 import os
+import re
 import pandas as pd
 import streamlit as st
-from utils import add_log
+from utils import add_log, format_code
+import ast
+import hashlib
 
 # Handle missing dependencies
 try:
@@ -33,7 +36,7 @@ except ImportError:
         pass
 
 
-def process_python_dataset(uploaded_file, dataset_name):
+def process_python_dataset(uploaded_file, dataset_name, preprocessing_options=None):
     """
     Process an uploaded Python dataset file.
     Supports .py, .json, and .csv formats.
@@ -41,12 +44,29 @@ def process_python_dataset(uploaded_file, dataset_name):
     Args:
         uploaded_file: The uploaded file object
         dataset_name: Name to identify the dataset
+        preprocessing_options: Dictionary of preprocessing options
 
     Returns:
         bool: Success status
     """
     try:
+        # Default preprocessing options if none provided
+        if preprocessing_options is None:
+            preprocessing_options = {
+                "clean_code": True,
+                "extract_docstring": False,
+                "extract_comments": False,
+                "calculate_complexity": False,
+                "deduplicate": False,
+                "min_length": 10,
+                "max_length": float('inf'),
+                "filter_by_complexity": False,
+                "min_complexity": 1,
+                "max_complexity": float('inf')
+            }
+        
         file_extension = uploaded_file.name.split(".")[-1].lower()
+        add_log(f"Processing {file_extension} file with name: {uploaded_file.name}")
 
         if file_extension == "py":
             # Process Python file
@@ -71,30 +91,64 @@ def process_python_dataset(uploaded_file, dataset_name):
         else:
             add_log(f"Unsupported file format: {file_extension}", "ERROR")
             return False
+        
+        # Validate dataset structure
+        if not validate_dataset_structure(dataset):
+            add_log("Dataset has invalid structure", "ERROR")
+            return False
 
         # Split into train/validation sets
-        train_test_split = dataset.train_test_split(test_size=0.2)
+        test_size = preprocessing_options.get("validation_split", 0.2)
+        train_test_split = dataset.train_test_split(test_size=test_size)
 
         # Create a DatasetDict
         dataset_dict = DatasetDict(
             {"train": train_test_split["train"], "validation": train_test_split["test"]}
         )
+        
+        # Apply preprocessing steps
+        add_log(f"Applying preprocessing steps to dataset '{dataset_name}'")
+        processed_dataset = preprocess_dataset(dataset_dict, preprocessing_options)
+        
+        # Get dataset statistics for info
+        train_size = len(processed_dataset["train"]) if "train" in processed_dataset else 0
+        validation_size = len(processed_dataset["validation"]) if "validation" in processed_dataset else 0
+        total_size = train_size + validation_size
 
+        # Store additional preprocessing metadata
+        preprocessing_metadata = {}
+        
+        if preprocessing_options.get("deduplicate", False):
+            preprocessing_metadata["deduplicated"] = True
+        
+        if preprocessing_options.get("clean_code", False):
+            preprocessing_metadata["cleaned"] = True
+            
+        if preprocessing_options.get("extract_docstring", False):
+            preprocessing_metadata["has_docstrings"] = True
+            
+        if preprocessing_options.get("extract_comments", False):
+            preprocessing_metadata["has_comments"] = True
+            
+        if preprocessing_options.get("calculate_complexity", False):
+            preprocessing_metadata["has_complexity"] = True
+        
         # Store in session state
         st.session_state.datasets[dataset_name] = {
-            "data": dataset_dict,
+            "data": processed_dataset,
             "info": {
                 "name": dataset_name,
-                "size": len(dataset),
-                "train_size": len(train_test_split["train"]),
-                "validation_size": len(train_test_split["test"]),
-                "columns": dataset.column_names,
+                "size": total_size,
+                "train_size": train_size,
+                "validation_size": validation_size,
+                "columns": processed_dataset["train"].column_names if train_size > 0 else [],
                 "created_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "preprocessing": preprocessing_metadata
             },
         }
 
         add_log(
-            f"Dataset '{dataset_name}' processed successfully with {len(dataset)} examples"
+            f"Dataset '{dataset_name}' processed successfully with {total_size} examples"
         )
         return True
 
@@ -207,3 +261,358 @@ def get_dataset(dataset_name):
     if "datasets" in st.session_state and dataset_name in st.session_state.datasets:
         return st.session_state.datasets[dataset_name]["data"]
     return None
+
+
+# ===================== PREPROCESSING UTILITIES ===================== #
+
+def clean_code(code_text):
+    """
+    Clean and normalize code by removing excessive whitespace and normalizing line endings.
+    
+    Args:
+        code_text (str): Raw code text
+        
+    Returns:
+        str: Cleaned code
+    """
+    if not code_text or not isinstance(code_text, str):
+        return ""
+    
+    # Normalize line endings
+    code_text = code_text.replace('\r\n', '\n').replace('\r', '\n')
+    
+    # Remove trailing whitespace from each line
+    lines = [line.rstrip() for line in code_text.split('\n')]
+    
+    # Remove multiple blank lines
+    cleaned_lines = []
+    prev_empty = False
+    for line in lines:
+        if not line.strip():
+            if not prev_empty:
+                cleaned_lines.append(line)
+            prev_empty = True
+        else:
+            cleaned_lines.append(line)
+            prev_empty = False
+    
+    return '\n'.join(cleaned_lines)
+
+
+def extract_docstring(code_text):
+    """
+    Extract docstrings from Python code.
+    
+    Args:
+        code_text (str): Python code text
+        
+    Returns:
+        str: Extracted docstring or empty string if none found
+    """
+    try:
+        # Parse the code text to an AST
+        parsed = ast.parse(code_text)
+        
+        # Function to get docstring from AST node
+        def get_docstring_from_node(node):
+            if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Module)):
+                if ast.get_docstring(node):
+                    return ast.get_docstring(node)
+            
+            for child in ast.iter_child_nodes(node):
+                docstring = get_docstring_from_node(child)
+                if docstring:
+                    return docstring
+            
+            return ""
+        
+        return get_docstring_from_node(parsed)
+    except SyntaxError:
+        # If code has syntax errors, return empty string
+        return ""
+
+
+def extract_comments(code_text):
+    """
+    Extract comments from Python code.
+    
+    Args:
+        code_text (str): Python code text
+        
+    Returns:
+        list: List of extracted comments
+    """
+    if not code_text or not isinstance(code_text, str):
+        return []
+    
+    comments = []
+    lines = code_text.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        # Find inline comments
+        if '#' in line:
+            comment_idx = line.find('#')
+            # Ensure this is not within a string
+            if not is_in_string(line, comment_idx):
+                comments.append(line[comment_idx+1:].strip())
+    
+    return comments
+
+
+def is_in_string(line, pos):
+    """
+    Check if a position in a line is inside a string.
+    
+    Args:
+        line (str): Line of code
+        pos (int): Position to check
+        
+    Returns:
+        bool: True if position is within a string
+    """
+    string_delimiters = ['"', "'"]
+    in_string = False
+    current_delimiter = None
+    
+    for i, char in enumerate(line):
+        if i >= pos:
+            return in_string
+        
+        if char in string_delimiters and (i == 0 or line[i-1] != '\\'):
+            if not in_string:
+                in_string = True
+                current_delimiter = char
+            elif char == current_delimiter:
+                in_string = False
+                current_delimiter = None
+    
+    return False
+
+
+def calculate_cyclomatic_complexity(code_text):
+    """
+    Calculate the cyclomatic complexity of Python code.
+    
+    Args:
+        code_text (str): Python code text
+        
+    Returns:
+        int: Cyclomatic complexity score
+    """
+    try:
+        # Parse the code text to an AST
+        parsed = ast.parse(code_text)
+        
+        # Count control flow statements
+        complexity = 1  # Base complexity is 1
+        
+        class ComplexityVisitor(ast.NodeVisitor):
+            def __init__(self):
+                self.complexity = 1
+            
+            def visit_If(self, node):
+                self.complexity += 1
+                self.generic_visit(node)
+            
+            def visit_For(self, node):
+                self.complexity += 1
+                self.generic_visit(node)
+            
+            def visit_While(self, node):
+                self.complexity += 1
+                self.generic_visit(node)
+            
+            def visit_Try(self, node):
+                self.complexity += len(node.handlers) + len(node.finalbody)
+                self.generic_visit(node)
+            
+            def visit_ExceptHandler(self, node):
+                self.complexity += 1
+                self.generic_visit(node)
+            
+            def visit_BoolOp(self, node):
+                # Count boolean operators (and, or)
+                self.complexity += len(node.values) - 1
+                self.generic_visit(node)
+        
+        visitor = ComplexityVisitor()
+        visitor.visit(parsed)
+        
+        return visitor.complexity
+    except SyntaxError:
+        # If code has syntax errors, return a high complexity value
+        return 10
+
+
+def get_code_hash(code_text):
+    """
+    Generate a hash for code text to identify duplicates.
+    Normalizes the code first to avoid false negatives.
+    
+    Args:
+        code_text (str): Code text to hash
+        
+    Returns:
+        str: SHA256 hash of the normalized code
+    """
+    # Normalize code by removing comments and whitespace
+    normalized_code = normalize_code_for_hashing(code_text)
+    
+    # Generate hash
+    return hashlib.sha256(normalized_code.encode()).hexdigest()
+
+
+def normalize_code_for_hashing(code_text):
+    """
+    Normalize code for hashing by removing comments, whitespace, and variable names.
+    
+    Args:
+        code_text (str): Code text to normalize
+        
+    Returns:
+        str: Normalized code
+    """
+    if not code_text or not isinstance(code_text, str):
+        return ""
+    
+    try:
+        # Remove comments and docstrings
+        parsed = ast.parse(code_text)
+        
+        class NameNormalizer(ast.NodeTransformer):
+            def __init__(self):
+                self.var_counter = 0
+                self.func_counter = 0
+                self.class_counter = 0
+                self.var_map = {}
+            
+            def visit_Name(self, node):
+                if isinstance(node.ctx, ast.Store):
+                    if node.id not in self.var_map:
+                        self.var_map[node.id] = f"var_{self.var_counter}"
+                        self.var_counter += 1
+                    node.id = self.var_map[node.id]
+                elif isinstance(node.ctx, ast.Load):
+                    if node.id in self.var_map:
+                        node.id = self.var_map[node.id]
+                return node
+            
+            def visit_FunctionDef(self, node):
+                self.func_counter += 1
+                node.name = f"func_{self.func_counter}"
+                self.generic_visit(node)
+                return node
+            
+            def visit_ClassDef(self, node):
+                self.class_counter += 1
+                node.name = f"class_{self.class_counter}"
+                self.generic_visit(node)
+                return node
+        
+        normalized = NameNormalizer().visit(parsed)
+        
+        # Convert back to source code
+        normalized_code = ast.unparse(normalized)
+        
+        # Remove all whitespace and convert to lowercase
+        return re.sub(r'\s+', '', normalized_code).lower()
+    except (SyntaxError, AttributeError):
+        # If code has syntax errors or ast.unparse is not available, 
+        # do a simpler normalization
+        # Remove comments
+        code_without_comments = re.sub(r'#.*$', '', code_text, flags=re.MULTILINE)
+        # Remove docstrings
+        code_without_docstrings = re.sub(r'""".*?"""', '', code_without_comments, flags=re.DOTALL)
+        code_without_docstrings = re.sub(r"'''.*?'''", '', code_without_docstrings, flags=re.DOTALL)
+        # Remove all whitespace
+        return re.sub(r'\s+', '', code_without_docstrings).lower()
+
+
+def preprocess_dataset(dataset, preprocessing_options):
+    """
+    Apply preprocessing steps to a dataset based on selected options.
+    
+    Args:
+        dataset: The dataset to preprocess
+        preprocessing_options (dict): Dictionary of preprocessing options
+        
+    Returns:
+        Dataset: Preprocessed dataset
+    """
+    add_log(f"Starting dataset preprocessing with options: {preprocessing_options}")
+    
+    # Apply preprocessing to each split
+    processed_dataset = {}
+    total_examples = 0
+    
+    for split_name, split_data in dataset.items():
+        examples = []
+        hashes = set()  # For deduplication
+        
+        for example in split_data["data"]:
+            code = example.get("code", "")
+            
+            # Skip if code is empty
+            if not code.strip():
+                continue
+            
+            # Apply cleaning if enabled
+            if preprocessing_options.get("clean_code", False):
+                code = clean_code(code)
+            
+            # Skip if minimum length not met
+            if len(code) < preprocessing_options.get("min_length", 0):
+                continue
+                
+            # Skip if maximum length exceeded
+            if preprocessing_options.get("max_length", float('inf')) < len(code):
+                continue
+            
+            # Skip if complexity filtering is enabled
+            if preprocessing_options.get("filter_by_complexity", False):
+                complexity = calculate_cyclomatic_complexity(code)
+                min_complexity = preprocessing_options.get("min_complexity", 1)
+                max_complexity = preprocessing_options.get("max_complexity", float('inf'))
+                
+                if complexity < min_complexity or complexity > max_complexity:
+                    continue
+            
+            # Deduplicate if enabled
+            if preprocessing_options.get("deduplicate", False):
+                code_hash = get_code_hash(code)
+                if code_hash in hashes:
+                    continue
+                hashes.add(code_hash)
+            
+            # Create processed example
+            processed_example = {"code": code}
+            
+            # Extract docstring if enabled
+            if preprocessing_options.get("extract_docstring", False):
+                docstring = extract_docstring(code)
+                if docstring:
+                    processed_example["docstring"] = docstring
+            
+            # Extract comments if enabled
+            if preprocessing_options.get("extract_comments", False):
+                comments = extract_comments(code)
+                if comments:
+                    processed_example["comments"] = comments
+            
+            # Calculate complexity if enabled
+            if preprocessing_options.get("calculate_complexity", False):
+                processed_example["complexity"] = calculate_cyclomatic_complexity(code)
+            
+            examples.append(processed_example)
+        
+        # Create processed split
+        processed_dataset[split_name] = Dataset.from_list(examples)
+        total_examples += len(examples)
+    
+    # Create DatasetDict
+    processed_dataset_dict = DatasetDict(processed_dataset)
+    
+    add_log(f"Dataset preprocessing completed. Total examples after preprocessing: {total_examples}")
+    
+    return processed_dataset_dict
