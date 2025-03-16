@@ -2,11 +2,19 @@ import io
 import json
 import os
 import re
-import pandas as pd
-import streamlit as st
-from utils import add_log, format_code
 import ast
 import hashlib
+from datetime import datetime
+
+# First import utilities that don't depend on pandas
+from utils import add_log, format_code
+
+# Then import pandas and streamlit
+import streamlit as st
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 # Handle missing dependencies
 try:
@@ -85,6 +93,9 @@ def process_python_dataset(uploaded_file, dataset_name, preprocessing_options=No
 
         elif file_extension == "csv":
             # Process CSV file
+            if pd is None:
+                add_log("Pandas is required to read CSV files but not available", "ERROR")
+                return False
             df = pd.read_csv(uploaded_file)
             dataset = Dataset.from_pandas(df)
 
@@ -142,7 +153,7 @@ def process_python_dataset(uploaded_file, dataset_name, preprocessing_options=No
                 "train_size": train_size,
                 "validation_size": validation_size,
                 "columns": processed_dataset["train"].column_names if train_size > 0 else [],
-                "created_at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S") if pd is None else pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "preprocessing": preprocessing_metadata
             },
         }

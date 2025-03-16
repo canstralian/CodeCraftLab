@@ -2,14 +2,26 @@ import os
 import time
 from datetime import datetime
 
-import streamlit as st
+# Import streamlit first
+try:
+    import streamlit as st
+except ImportError:
+    # Create a dummy st object if streamlit not available
+    class DummySt:
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+    st = DummySt()
 
-# Handle missing dependencies gracefully
+# Handle other dependencies gracefully
 try:
     import plotly.express as px
-    import pandas as pd
 except ImportError:
     px = None
+
+# Import pandas separately to avoid circular imports
+try:
+    import pandas as pd
+except ImportError:
     pd = None
 
 
