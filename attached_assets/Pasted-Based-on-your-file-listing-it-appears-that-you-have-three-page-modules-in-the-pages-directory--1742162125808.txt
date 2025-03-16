@@ -1,0 +1,46 @@
+Based on your file listing, it appears that you have three page modules in the `pages/` directory:
+
+- **pages/01_Dataset_Management.py**
+- **pages/02_Model_Training.py**
+- **pages/03_Code_Generation.py**
+
+plus a few utility modules (e.g., `data_utils.py`, `model_utils.py`, `training_utils.py`) that likely support the functionality of these pages.
+
+### Why the "Page Not Found" Error?
+
+Even though the file **01_Dataset_Management.py** exists, the error message indicates that the route `/Dataset_Management` wasn’t found. This discrepancy can occur for a few reasons:
+
+1. **URL Slug Generation:**  
+   Many multipage app frameworks (such as those built with Streamlit or Gradio) generate routes or URL slugs based on the page file names. When you include numeric prefixes (like `01_`), the framework might either:
+   - Include the numeric part in the route (e.g., `/01_dataset_management`), or  
+   - Strip the prefix for display purposes but use a different internal mapping for routing.
+
+2. **Case and Format Sensitivity:**  
+   The URL you’re accessing (`/Dataset_Management`) may not match the actual route if the framework converts names to all lowercase or replaces underscores with dashes (e.g., `/dataset-management`).
+
+3. **Routing Configuration:**  
+   Some apps require an explicit routing configuration or use a naming convention that must be followed. If your code expects the page slug to match the file’s “clean” name (without the prefix), then accessing `/Dataset_Management` might not work if the system expects something like `/dataset-management`.
+
+### How to Resolve It
+
+- **Check the Framework Documentation:**  
+  Review the multipage routing or file naming guidelines for your chosen framework (e.g., [Streamlit’s multipage app documentation](https://docs.streamlit.io)) to see how it derives the URL slug from the file name.
+
+- **Adjust the File Names or Routes:**  
+  - **Rename Files:** If you want the route to be `/dataset_management` or `/Dataset_Management`, consider renaming the file to remove the numeric prefix (e.g., `Dataset_Management.py`).  
+  - **Modify the Routing Logic:** Alternatively, adjust your routing configuration so that it correctly maps `/Dataset_Management` to the file `01_Dataset_Management.py`.
+
+- **Test via the Navigation Sidebar:**  
+  Most multipage apps automatically generate a sidebar with links to the available pages. Use these links to verify the correct route for the dataset management page.
+
+### Integration with Your Autoregressive Text-to-Code Model
+
+Given your project’s overall aim—to translate natural language prompts into executable code—the three pages likely serve distinct roles:
+
+- **Dataset Management:** Prepares and processes training data (with potential functions in `data_utils.py`).
+- **Model Training:** Handles the training loop and model management (likely using functions from `model_utils.py` and `training_utils.py`).
+- **Code Generation:** Implements the autoregressive model to translate user prompts into code.
+
+Ensuring that each page is accessible via the correct route is crucial for a smooth user experience. Adjusting the naming or route mapping as described should resolve the "Page not found" error.
+
+If you continue to experience issues, you might also check any logs or debugging output provided by the app framework to pinpoint the discrepancy in route naming.

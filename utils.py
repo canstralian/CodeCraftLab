@@ -10,6 +10,7 @@ try:
 except ImportError:
     px = None
 
+
 def set_page_config():
     """Set the page configuration with title and layout."""
     st.set_page_config(
@@ -18,6 +19,7 @@ def set_page_config():
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
 
 def display_sidebar():
     """Display sidebar with navigation options."""
@@ -47,17 +49,19 @@ def display_sidebar():
     st.sidebar.markdown("---")
     st.sidebar.caption("© 2023 CodeGen Hub")
 
+
 def timestamp():
     """Return a formatted timestamp for logging."""
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 def add_log(message, log_type="INFO"):
     """Add a log message to the training logs."""
     try:
         if "training_logs" not in st.session_state:
             st.session_state.training_logs = []
-        
-        initialize_session_state() #Initialize session state before logging.
+
+        initialize_session_state()  # Initialize session state before logging.
 
         log_entry = f"[{timestamp()}] [{log_type}] {message}"
         st.session_state.training_logs.append(log_entry)
