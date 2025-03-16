@@ -82,12 +82,32 @@ with tab1:
                                     help="Extract docstrings from Python code")
             extract_comments = st.checkbox("Extract comments", value=False,
                                 help="Extract comments from Python code")
-            
-        with col2:
             calculate_complexity = st.checkbox("Calculate code complexity", value=False,
                                     help="Compute cyclomatic complexity for each code sample")
+            
+        with col2:
+            extract_names = st.checkbox("Extract function/class names", value=False,
+                                help="Extract function and class names from code")
+            analyze_imports = st.checkbox("Analyze imports", value=False,
+                                help="Extract and analyze import statements")
+            calculate_statistics = st.checkbox("Calculate code statistics", value=False,
+                                    help="Calculate various code statistics (lines, tokens, etc)")
+        
+        st.markdown("### Code Style & Standardization")
+        col1, col2 = st.columns(2)
+        with col1:
+            analyze_style = st.checkbox("Analyze code style", value=False,
+                                help="Check code for PEP 8 compliance and style issues")
             filter_by_complexity = st.checkbox("Filter by complexity", value=False,
                                     help="Filter code samples based on complexity")
+            
+        with col2:
+            standardize_code = st.checkbox("Standardize code", value=False,
+                                help="Apply code standardization (spacing, indentation, etc)")
+            use_standardized = st.checkbox("Use standardized code", value=False,
+                                help="Use standardized code for processing (requires 'Standardize code')")
+            if standardize_code and not use_standardized:
+                st.info("The original code will be preserved, standardized version will be added as 'standardized_code'.")
             
         if filter_by_complexity:
             col1, col2 = st.columns(2)
@@ -124,6 +144,14 @@ with tab1:
                 "extract_docstring": extract_docstrings,
                 "extract_comments": extract_comments,
                 "calculate_complexity": calculate_complexity,
+                "extract_names": extract_names,
+                "analyze_imports": analyze_imports,
+                "calculate_statistics": calculate_statistics,
+                
+                # Code style and standardization
+                "analyze_style": analyze_style,
+                "standardize_code": standardize_code,
+                "use_standardized": use_standardized if standardize_code else False,
                 
                 # Complexity filtering
                 "filter_by_complexity": filter_by_complexity,
