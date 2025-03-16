@@ -427,13 +427,61 @@ def update_active_jobs_count():
         st.session_state.active_jobs_count = active_count
 
 
-def start_model_training(*args, **kwargs):
-    """Start model training with job counter update."""
-    result = (
-        simulate_training(*args, **kwargs)
-        if not TRANSFORMERS_AVAILABLE
-        else train_model_thread(*args, **kwargs)
-    )
+# Override the original start_model_training with this enhanced version
+# that also updates the active jobs count
+def start_model_training(
+    model_id, dataset_name, base_model_name, learning_rate, batch_size, epochs
+):
+    """
+    Start model training in a separate thread with job counter update.
+
+    Args:
+        model_id: Identifier for the model
+        dataset_name: Name of the dataset to use
+        base_model_name: Base model from Hugging Face
+        learning_rate: Learning rate for training
+        batch_size: Batch size for training
+        epochs: Number of training epochs
+
+    Returns:
+        threading.Event: Event to signal stopping the training
+    """
+    # Use simulate_training instead if transformers isn't available
+    if not TRANSFORMERS_AVAILABLE:
+        add_log("No transformers library available, using simulation mode")
+        result = simulate_training(model_id, dataset_name, base_model_name, epochs)
+    else:
+        # Create training arguments
+        training_args = TrainingArguments(
+            learning_rate=learning_rate, batch_size=batch_size, num_train_epochs=epochs
+        )
+
+        # Determine device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        add_log(f"Using device: {device}")
+
+        # Initialize training progress
+        initialize_training_progress(model_id)
+
+        # Create stop event
+        stop_event = threading.Event()
+
+        # Start training thread
+        training_thread = threading.Thread(
+            target=train_model_thread,
+            args=(
+                model_id,
+                dataset_name,
+                base_model_name,
+                training_args,
+                device,
+                stop_event,
+            ),
+        )
+        training_thread.start()
+        result = stop_event
+    
+    # Update the active jobs count
     update_active_jobs_count()
     return result
 

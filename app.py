@@ -24,59 +24,37 @@ st.markdown("""
 """)
 
 
-# Sidebar navigation using session state
-def navigate(page):
-    st.session_state["current_page"] = page
-
-
 # Initialize session state variables using a loop
-session_defaults = {
-    "datasets": {},  # Stores uploaded datasets
-    "trained_models": {},  # Stores trained model details
-    "training_logs": [],  # Stores training logs
-    "training_progress": {},  # Tracks active training jobs
-    "current_page": "home",  # Default landing page
-}
+from utils import initialize_session_state
 
-for key, value in session_defaults.items():
-    if key not in st.session_state:
-        st.session_state[key] = value
+# Initialize session state
+initialize_session_state()
 
-# Display sidebar with navigation buttons
+# Display sidebar with navigation links - using Streamlit's pages mechanism
 with st.sidebar:
     st.header("Navigation")
-    if st.button("🏗️ Dataset Management"):
-        navigate("dataset_management")
-    if st.button("🎯 Model Training"):
-        navigate("model_training")
-    if st.button("🔮 Code Generation"):
-        navigate("code_generation")
+    st.markdown("""
+    - [Home](/)
+    - [Dataset Management](/Dataset_Management)
+    - [Model Training](/Model_Training)
+    - [Code Generation](/Code_Generation)
+    """)
 
-# Render content dynamically based on session state
-if st.session_state["current_page"] == "dataset_management":
-    st.subheader("Dataset Management")
-    st.write("Upload and manage your datasets here.")
-elif st.session_state["current_page"] == "model_training":
-    st.subheader("Model Training")
-    st.write("Configure and train your models.")
-elif st.session_state["current_page"] == "code_generation":
-    st.subheader("Code Generation")
-    st.write("Generate predictions using your trained models.")
-else:
-    st.subheader("Getting Started")
-    col1, col2 = st.columns(2)
+# Main page content
+st.subheader("Getting Started")
+col1, col2 = st.columns(2)
 
-    with col1:
-        st.info("""
-            1. 📊 Start by uploading or selecting a Python code dataset in the **Dataset Management** section.
-            2. 🛠️ Configure and train your model in the **Model Training** section.
-        """)
+with col1:
+    st.info("""
+        1. 📊 Start by uploading or selecting a Python code dataset in the **Dataset Management** section.
+        2. 🛠️ Configure and train your model in the **Model Training** section.
+    """)
 
-    with col2:
-        st.info("""
-            3. 💡 Generate code predictions using your trained models in the **Code Generation** section.
-            4. 🔄 Access your models on Hugging Face Hub for broader use.
-        """)
+with col2:
+    st.info("""
+        3. 💡 Generate code predictions using your trained models in the **Code Generation** section.
+        4. 🔄 Access your models on Hugging Face Hub for broader use.
+    """)
 
 # Display platform statistics dynamically
 st.subheader("Platform Statistics")
