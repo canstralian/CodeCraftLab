@@ -8,9 +8,49 @@ import pandas as pd
 class DatasetManager:
     """Handles dataset downloading and preprocessing for code generation."""
     
+    KNOWN_REPOSITORIES = {
+        "python-code-500k": {
+            "owner": "Jtatman",
+            "repo": "python-code-dataset-500k",
+            "path": "dataset/code_samples.json"
+        },
+        "codeforces-python": {
+            "owner": "MatrixStudio",
+            "repo": "Codeforces-Python-Submissions",
+            "path": "submissions.json"
+        },
+        "python-reasoning": {
+            "owner": "sdiazlor",
+            "repo": "python-reasoning-dataset",
+            "path": "data/samples.json"
+        },
+        "github-code": {
+            "owner": "angie-chen55",
+            "repo": "python-github-code",
+            "path": "data/code_samples.json"
+        }
+    }
+    
     def __init__(self, cache_dir: str = "datasets"):
         self.cache_dir = cache_dir
         os.makedirs(cache_dir, exist_ok=True)
+        
+    def get_available_repositories(self) -> List[str]:
+        """Returns list of available repository names."""
+        return list(self.KNOWN_REPOSITORIES.keys())
+        
+    def download_repository(self, repo_name: str) -> pd.DataFrame:
+        """Downloads and processes a known repository."""
+        if repo_name not in self.KNOWN_REPOSITORIES:
+            raise ValueError(f"Unknown repository: {repo_name}")
+            
+        repo_info = self.KNOWN_REPOSITORIES[repo_name]
+        local_path = self.download_github_dataset(
+            repo_info["owner"],
+            repo_info["repo"],
+            repo_info["path"]
+        )
+        return self.load_dataset(local_path)
         
     def download_github_dataset(self, owner: str, repo: str, path: str) -> str:
         """Downloads a dataset from a GitHub repository."""

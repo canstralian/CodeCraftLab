@@ -244,6 +244,53 @@ with tab2:
     if not available_datasets:
         st.info("No datasets available. Upload a dataset in the 'Upload Dataset' tab.")
     else:
+        # Dataset download section
+        st.subheader("Download from Known Repositories")
+
+        class DatasetManager:
+            def __init__(self):
+                self.repositories = {
+                    "Jtatman/python-code-dataset-500k": "https://github.com/Jtatman/python-code-dataset-500k",
+                    "MatrixStudio/Codeforces-Python-Submissions": "https://github.com/MatrixStudio/Codeforces-Python-Submissions",
+                    "sdiazlor/python-reasoning-dataset": "https://github.com/sdiazlor/python-reasoning-dataset",
+                    "angie-chen55/python-github-code": "https://github.com/angie-chen55/python-github-code",
+
+                }
+
+            def get_available_repositories(self):
+                return list(self.repositories.keys())
+
+            def download_repository(self, repo_name):
+                # Placeholder for actual download logic.  Replace with your implementation.
+                # This example just returns a dummy DataFrame.
+                # In a real application, you'd fetch the data from the repository URL.
+                url = self.repositories.get(repo_name)
+                if url is None:
+                    raise ValueError(f"Repository '{repo_name}' not found")
+                #Simulate download
+                data = [{"code": f"Code from {repo_name} - Sample {i}" } for i in range(100)]
+                return pd.DataFrame(data)
+
+
+        dataset_manager = DatasetManager()
+        available_repos = dataset_manager.get_available_repositories()
+
+        selected_repo = st.selectbox(
+            "Select Repository",
+            available_repos,
+            format_func=lambda x: x.replace("-", " ").title()
+        )
+
+        if st.button("Download Selected Repository"):
+            with st.spinner("Downloading and processing dataset..."):
+                try:
+                    df = dataset_manager.download_repository(selected_repo)
+                    st.success(f"Successfully downloaded {len(df)} code samples!")
+                except Exception as e:
+                    st.error(f"Failed to download repository: {str(e)}")
+
+        st.divider()
+
         # Dataset selection
         selected_dataset = st.selectbox("Select a Dataset", available_datasets)
 
