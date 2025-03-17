@@ -1,11 +1,10 @@
+
 [server]
 headless = true
+enableCORS = false
 address = "0.0.0.0"
-port = 5000
+port = 8080
 
-[theme]
-primaryColor = "#FFD21E"
-backgroundColor = "#F7FAFC"
-secondaryBackgroundColor = "#4A5568"
-textColor = "#1A202C"
-font = "Inter"
+[browser]
+serverAddress = "0.0.0.0"
+gatherUsageStats = false
