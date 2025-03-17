@@ -480,7 +480,7 @@ def start_model_training(
         )
         training_thread.start()
         result = stop_event
-    
+
     # Update the active jobs count
     update_active_jobs_count()
     return result

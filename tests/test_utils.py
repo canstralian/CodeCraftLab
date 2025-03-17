@@ -1,4 +1,3 @@
-
 import unittest
 from unittest.mock import patch
 
@@ -46,24 +45,14 @@ class TestStreamlitApp(unittest.TestCase):
 
     @patch("streamlit.metric")
     @patch("streamlit.session_state", new_callable=dict)
-    def test_platform_statistics_display(self, mock_session_state,
-                                         mock_metric):
+    def test_platform_statistics_display(self, mock_session_state, mock_metric):
         """Test platform statistics metrics display"""
-        mock_session_state["datasets"] = {
-            "dataset1": "data1",
-            "dataset2": "data2"
-        }
+        mock_session_state["datasets"] = {"dataset1": "data1", "dataset2": "data2"}
         mock_session_state["trained_models"] = {"model1": "trained_model1"}
         mock_session_state["training_progress"] = {
-            "job1": {
-                "status": "running"
-            },
-            "job2": {
-                "status": "completed"
-            },
-            "job3": {
-                "status": "running"
-            },
+            "job1": {"status": "running"},
+            "job2": {"status": "completed"},
+            "job3": {"status": "running"},
         }
 
         mock_metric.assert_any_call("Datasets Available", 2)

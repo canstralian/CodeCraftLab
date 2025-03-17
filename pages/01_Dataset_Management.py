@@ -1,6 +1,7 @@
 import time
 
 import streamlit as st
+
 from data_utils import get_dataset_info, list_available_datasets, process_python_dataset
 from utils import add_log, display_sidebar, set_page_config
 
@@ -12,6 +13,7 @@ except ImportError:
     class PandasMock:
         def DataFrame(self, *args, **kwargs):
             return args[0] if args else {}
+
     pd = PandasMock()
 
 # Set page configuration
@@ -65,65 +67,119 @@ with tab1:
             step=0.05,
             disabled=not auto_split,
         )
-        
+
     # Preprocessing settings section with expandable container
     with st.expander("Advanced Preprocessing Options", expanded=False):
         st.markdown("### Code Quality")
         col1, col2 = st.columns(2)
         with col1:
-            clean_code_option = st.checkbox("Clean and normalize code", value=True, 
-                                help="Remove excessive whitespace and normalize line endings")
-            deduplicate = st.checkbox("Remove duplicate code samples", value=False,
-                                help="Detect and remove duplicate code snippets")
-            
+            clean_code_option = st.checkbox(
+                "Clean and normalize code",
+                value=True,
+                help="Remove excessive whitespace and normalize line endings",
+            )
+            deduplicate = st.checkbox(
+                "Remove duplicate code samples",
+                value=False,
+                help="Detect and remove duplicate code snippets",
+            )
+
         with col2:
-            min_length = st.number_input("Minimum code length (chars)", min_value=0, value=10,
-                                help="Filter out code samples below this length")
-            max_length = st.number_input("Maximum code length (chars)", min_value=0, value=10000,
-                                help="Filter out code samples above this length (0 for no limit)")
-    
+            min_length = st.number_input(
+                "Minimum code length (chars)",
+                min_value=0,
+                value=10,
+                help="Filter out code samples below this length",
+            )
+            max_length = st.number_input(
+                "Maximum code length (chars)",
+                min_value=0,
+                value=10000,
+                help="Filter out code samples above this length (0 for no limit)",
+            )
+
         st.markdown("### Feature Extraction")
         col1, col2 = st.columns(2)
         with col1:
-            extract_docstrings = st.checkbox("Extract docstrings", value=False,
-                                    help="Extract docstrings from Python code")
-            extract_comments = st.checkbox("Extract comments", value=False,
-                                help="Extract comments from Python code")
-            calculate_complexity = st.checkbox("Calculate code complexity", value=False,
-                                    help="Compute cyclomatic complexity for each code sample")
-            
+            extract_docstrings = st.checkbox(
+                "Extract docstrings",
+                value=False,
+                help="Extract docstrings from Python code",
+            )
+            extract_comments = st.checkbox(
+                "Extract comments",
+                value=False,
+                help="Extract comments from Python code",
+            )
+            calculate_complexity = st.checkbox(
+                "Calculate code complexity",
+                value=False,
+                help="Compute cyclomatic complexity for each code sample",
+            )
+
         with col2:
-            extract_names = st.checkbox("Extract function/class names", value=False,
-                                help="Extract function and class names from code")
-            analyze_imports = st.checkbox("Analyze imports", value=False,
-                                help="Extract and analyze import statements")
-            calculate_statistics = st.checkbox("Calculate code statistics", value=False,
-                                    help="Calculate various code statistics (lines, tokens, etc)")
-        
+            extract_names = st.checkbox(
+                "Extract function/class names",
+                value=False,
+                help="Extract function and class names from code",
+            )
+            analyze_imports = st.checkbox(
+                "Analyze imports",
+                value=False,
+                help="Extract and analyze import statements",
+            )
+            calculate_statistics = st.checkbox(
+                "Calculate code statistics",
+                value=False,
+                help="Calculate various code statistics (lines, tokens, etc)",
+            )
+
         st.markdown("### Code Style & Standardization")
         col1, col2 = st.columns(2)
         with col1:
-            analyze_style = st.checkbox("Analyze code style", value=False,
-                                help="Check code for PEP 8 compliance and style issues")
-            filter_by_complexity = st.checkbox("Filter by complexity", value=False,
-                                    help="Filter code samples based on complexity")
-            
+            analyze_style = st.checkbox(
+                "Analyze code style",
+                value=False,
+                help="Check code for PEP 8 compliance and style issues",
+            )
+            filter_by_complexity = st.checkbox(
+                "Filter by complexity",
+                value=False,
+                help="Filter code samples based on complexity",
+            )
+
         with col2:
-            standardize_code = st.checkbox("Standardize code", value=False,
-                                help="Apply code standardization (spacing, indentation, etc)")
-            use_standardized = st.checkbox("Use standardized code", value=False,
-                                help="Use standardized code for processing (requires 'Standardize code')")
+            standardize_code = st.checkbox(
+                "Standardize code",
+                value=False,
+                help="Apply code standardization (spacing, indentation, etc)",
+            )
+            use_standardized = st.checkbox(
+                "Use standardized code",
+                value=False,
+                help="Use standardized code for processing (requires 'Standardize code')",
+            )
             if standardize_code and not use_standardized:
-                st.info("The original code will be preserved, standardized version will be added as 'standardized_code'.")
-            
+                st.info(
+                    "The original code will be preserved, standardized version will be added as 'standardized_code'."
+                )
+
         if filter_by_complexity:
             col1, col2 = st.columns(2)
             with col1:
-                min_complexity = st.number_input("Minimum complexity", min_value=1, value=1,
-                                        help="Filter out code below this complexity")
+                min_complexity = st.number_input(
+                    "Minimum complexity",
+                    min_value=1,
+                    value=1,
+                    help="Filter out code below this complexity",
+                )
             with col2:
-                max_complexity = st.number_input("Maximum complexity", min_value=1, value=20,
-                                        help="Filter out code above this complexity")
+                max_complexity = st.number_input(
+                    "Maximum complexity",
+                    min_value=1,
+                    value=20,
+                    help="Filter out code above this complexity",
+                )
 
     # Process button
     if st.button("Process Dataset"):
@@ -140,13 +196,11 @@ with tab1:
             preprocessing_options = {
                 # Dataset splitting
                 "validation_split": split_ratio if auto_split else 0.2,
-                
                 # Code quality options
                 "clean_code": clean_code_option,
                 "deduplicate": deduplicate,
                 "min_length": min_length,
-                "max_length": max_length if max_length > 0 else float('inf'),
-                
+                "max_length": max_length if max_length > 0 else float("inf"),
                 # Feature extraction
                 "extract_docstring": extract_docstrings,
                 "extract_comments": extract_comments,
@@ -154,24 +208,28 @@ with tab1:
                 "extract_names": extract_names,
                 "analyze_imports": analyze_imports,
                 "calculate_statistics": calculate_statistics,
-                
                 # Code style and standardization
                 "analyze_style": analyze_style,
                 "standardize_code": standardize_code,
                 "use_standardized": use_standardized if standardize_code else False,
-                
                 # Complexity filtering
                 "filter_by_complexity": filter_by_complexity,
                 "min_complexity": min_complexity if filter_by_complexity else 1,
-                "max_complexity": max_complexity if filter_by_complexity else float('inf')
+                "max_complexity": (
+                    max_complexity if filter_by_complexity else float("inf")
+                ),
             }
-            
+
             with st.spinner("Processing dataset..."):
                 add_log(f"Processing dataset with options: {preprocessing_options}")
-                success = process_python_dataset(uploaded_file, dataset_name, preprocessing_options)
+                success = process_python_dataset(
+                    uploaded_file, dataset_name, preprocessing_options
+                )
                 if success:
                     st.success(f"Dataset '{dataset_name}' processed successfully!")
-                    add_log(f"Dataset '{dataset_name}' uploaded and processed with preprocessing")
+                    add_log(
+                        f"Dataset '{dataset_name}' uploaded and processed with preprocessing"
+                    )
                     time.sleep(1)
                     st.rerun()
                 else:
@@ -206,18 +264,18 @@ with tab2:
                         f"**Validation Examples:** {dataset_info['validation_size']}"
                     )
                     st.markdown(f"**Created:** {dataset_info['created_at']}")
-                    
+
                     # Display preprocessing metadata if available
                     preprocessing = dataset_info.get("preprocessing", {})
                     if preprocessing:
                         st.markdown("### Preprocessing Info")
-                        
+
                         # Code quality metrics
                         if preprocessing.get("cleaned"):
                             st.markdown("✅ Code cleaning applied")
                         if preprocessing.get("deduplicated"):
                             st.markdown("✅ Duplicate removal applied")
-                            
+
                         # Feature extraction
                         if preprocessing.get("has_docstrings"):
                             st.markdown("✅ Docstrings extracted")
@@ -231,7 +289,7 @@ with tab2:
                             st.markdown("✅ Import statements analyzed")
                         if preprocessing.get("has_code_statistics"):
                             st.markdown("✅ Code statistics calculated")
-                            
+
                         # Code style
                         if preprocessing.get("has_style_analysis"):
                             st.markdown("✅ Code style analyzed")
@@ -262,94 +320,129 @@ with tab2:
                                 dataset["train"][i].get("code", "# No code available"),
                                 language="python",
                             )
-                            
+
                             # Display additional features in columns if they exist
                             example = dataset["train"][i]
-                            
+
                             # Check if we have additional extracted features
-                            has_extra = any(k in example for k in ["docstring", "comments", "complexity", 
-                                                                  "function_names", "class_names", "imports", 
-                                                                  "statistics", "style_issues", "standardized_code"])
-                            
+                            has_extra = any(
+                                k in example
+                                for k in [
+                                    "docstring",
+                                    "comments",
+                                    "complexity",
+                                    "function_names",
+                                    "class_names",
+                                    "imports",
+                                    "statistics",
+                                    "style_issues",
+                                    "standardized_code",
+                                ]
+                            )
+
                             if has_extra:
                                 st.markdown("### Additional Features")
-                                
+
                                 # Basic code features
                                 col1, col2 = st.columns(2)
-                                
+
                                 with col1:
                                     if "docstring" in example:
                                         with st.expander("Docstring"):
-                                            st.markdown(f"```\n{example['docstring']}\n```")
-                                    
+                                            st.markdown(
+                                                f"```\n{example['docstring']}\n```"
+                                            )
+
                                     if "comments" in example:
                                         with st.expander("Comments"):
                                             for comment in example["comments"]:
                                                 st.markdown(f"- `{comment}`")
-                                
+
                                 with col2:
                                     if "complexity" in example:
-                                        st.metric("Cyclomatic Complexity", example["complexity"])
-                                    
+                                        st.metric(
+                                            "Cyclomatic Complexity",
+                                            example["complexity"],
+                                        )
+
                                     # Structure metrics
-                                    if "function_names" in example and example["function_names"]:
+                                    if (
+                                        "function_names" in example
+                                        and example["function_names"]
+                                    ):
                                         with st.expander("Functions"):
                                             for func in example["function_names"]:
                                                 st.markdown(f"- `{func}`")
-                                    
-                                    if "class_names" in example and example["class_names"]:
+
+                                    if (
+                                        "class_names" in example
+                                        and example["class_names"]
+                                    ):
                                         with st.expander("Classes"):
                                             for cls in example["class_names"]:
                                                 st.markdown(f"- `{cls}`")
-                                
+
                                 # Code analysis
                                 if "imports" in example:
                                     with st.expander("Import Analysis"):
                                         imports = example["imports"]
-                                        st.markdown(f"**Total imports:** {imports.get('total_count', 0)}")
-                                        
+                                        st.markdown(
+                                            f"**Total imports:** {imports.get('total_count', 0)}"
+                                        )
+
                                         if imports.get("standard_lib"):
                                             st.markdown("**Standard library imports:**")
                                             for imp in imports.get("standard_lib", []):
                                                 st.markdown(f"- `{imp}`")
-                                        
+
                                         if imports.get("third_party"):
                                             st.markdown("**Third-party imports:**")
                                             for imp in imports.get("third_party", []):
                                                 st.markdown(f"- `{imp}`")
-                                        
+
                                         if imports.get("local"):
                                             st.markdown("**Local imports:**")
                                             for imp in imports.get("local", []):
                                                 st.markdown(f"- `{imp}`")
-                                
+
                                 # Code statistics
                                 if "statistics" in example:
                                     with st.expander("Code Statistics"):
                                         stats = example["statistics"]
                                         col1, col2, col3 = st.columns(3)
                                         with col1:
-                                            st.metric("Lines", stats.get("total_lines", 0))
+                                            st.metric(
+                                                "Lines", stats.get("total_lines", 0)
+                                            )
                                         with col2:
-                                            st.metric("Tokens", stats.get("total_tokens", 0))
+                                            st.metric(
+                                                "Tokens", stats.get("total_tokens", 0)
+                                            )
                                         with col3:
-                                            st.metric("AST Nodes", stats.get("ast_nodes", 0))
-                                
+                                            st.metric(
+                                                "AST Nodes", stats.get("ast_nodes", 0)
+                                            )
+
                                 # Code style
                                 if "style_issues" in example:
                                     with st.expander("Style Analysis"):
                                         style = example["style_issues"]
-                                        st.markdown(f"**PEP 8 compliance score:** {style.get('pep8_score', 0)}/10")
-                                        
+                                        st.markdown(
+                                            f"**PEP 8 compliance score:** {style.get('pep8_score', 0)}/10"
+                                        )
+
                                         if style.get("issues"):
                                             st.markdown("**Style issues:**")
                                             for issue in style.get("issues", []):
                                                 st.markdown(f"- {issue}")
-                                
+
                                 # Standardized code
                                 if "standardized_code" in example:
                                     with st.expander("Standardized Code"):
-                                        st.code(example["standardized_code"], language="python")
+                                        st.code(
+                                            example["standardized_code"],
+                                            language="python",
+                                        )
                 else:
                     st.info("No examples available to display")
 
