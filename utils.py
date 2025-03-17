@@ -7,6 +7,34 @@ try:
     import streamlit as st
 except ImportError:
     # Create a dummy st object if streamlit not available
+
+def recover_session_state():
+    """Attempt to recover session state after errors."""
+    try:
+        # Check for corrupted state
+        required_keys = ["datasets", "trained_models", "training_logs"]
+        for key in required_keys:
+            if key not in st.session_state or st.session_state[key] is None:
+                st.session_state[key] = {} if key != "training_logs" else []
+                add_log(f"Recovered {key} in session state", "WARNING")
+        
+        # Verify trained models integrity
+        if "trained_models" in st.session_state:
+            corrupted_models = []
+            for model_id in list(st.session_state.trained_models.keys()):
+                if not isinstance(st.session_state.trained_models[model_id], dict):
+                    corrupted_models.append(model_id)
+            
+            # Remove corrupted models
+            for model_id in corrupted_models:
+                del st.session_state.trained_models[model_id]
+                add_log(f"Removed corrupted model: {model_id}", "WARNING")
+                
+        return True
+    except Exception as e:
+        st.error(f"Failed to recover session state: {str(e)}")
+        return False
+
     class DummySt:
         def __getattr__(self, name):
             return lambda *args, **kwargs: None
@@ -28,12 +56,17 @@ except ImportError:
 
 def set_page_config():
     """Set the page configuration with title and layout."""
-    st.set_page_config(
-        page_title="CodeGen Hub",
-        page_icon="💻",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
+    try:
+        st.set_page_config(
+            page_title="CodeGen Hub",
+            page_icon="💻",
+            layout="wide",
+            initial_sidebar_state="expanded",
+        )
+    except Exception as e:
+        st.error(f"Failed to set page config: {str(e)}")
+        # Fallback to default config
+        st.set_page_config(page_title="CodeGen Hub")
 
 
 def display_sidebar():
@@ -89,7 +122,7 @@ def add_log(message, log_type="INFO"):
 
 
 def initialize_session_state():
-    """Initialize session state variables."""
+    """Initialize session state variables with error handling and fallbacks."""
     try:
         defaults = {
             "datasets": {},
@@ -102,11 +135,26 @@ def initialize_session_state():
         }
 
         for key, default_value in defaults.items():
-            if key not in st.session_state:
-                st.session_state[key] = default_value
-                add_log(f"Initialized {key} in session state")
+            try:
+                if key not in st.session_state:
+                    st.session_state[key] = default_value
+                    add_log(f"Initialized {key} in session state")
+            except Exception as e:
+                st.warning(f"Failed to initialize {key}, using fallback empty value")
+                if isinstance(default_value, dict):
+                    st.session_state[key] = {}
+                elif isinstance(default_value, list):
+                    st.session_state[key] = []
+                else:
+                    st.session_state[key] = None
+                add_log(f"Error initializing {key}: {str(e)}", "ERROR")
     except Exception as e:
-        st.error(f"Failed to initialize session state: {str(e)}")
+        st.error("Critical session state initialization failure")
+        # Emergency fallback initialization
+        st.session_state.datasets = {}
+        st.session_state.trained_models = {}
+        st.session_state.training_logs = []
+        add_log(f"Emergency session state initialization: {str(e)}", "ERROR")
 
 
 def format_code(code_text):
@@ -162,16 +210,22 @@ def display_logs(max_logs=20):
 
 def plot_training_progress(model_id):
     """
-    Plot training progress for a model.
+    Plot training progress for a model with error handling.
 
     Args:
         model_id (str): ID of the model
     """
-    if px is None or pd is None:
-        st.warning(
-            "Plotly or pandas is not available. Install them with `pip install plotly pandas`."
-        )
-        return
+    try:
+        if px is None or pd is None:
+            st.warning(
+                "Plotly or pandas is not available. Install them with `pip install plotly pandas`."
+            )
+            # Fallback to basic line chart
+            if "training_progress" in st.session_state and model_id in st.session_state.training_progress:
+                progress = st.session_state.training_progress[model_id]
+                if progress.get("loss_history"):
+                    st.line_chart(progress["loss_history"])
+            return
 
     if (
         "training_progress" not in st.session_state
